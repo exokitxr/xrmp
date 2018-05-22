@@ -4,6 +4,7 @@
   "description": "XRMultiplayer implementation",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -15,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/webmixedreality/xrmp/issues"
   },
-  "homepage": "https://github.com/webmixedreality/xrmp#readme"
+  "homepage": "https://github.com/webmixedreality/xrmp#readme",
+  "devDependencies": {
+    "express": "^4.16.3"
+  }
 }
