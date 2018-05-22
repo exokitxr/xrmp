@@ -160,6 +160,8 @@
             const spriteMesh = sprite3d.makeSpriteMesh(img);
             spriteMesh.position.set(-1/2 + x/(size-1), 0.1, -1/2 + z/(size-1));
             scene.add(spriteMesh);
+
+            itemMeshes.push(spriteMesh);
           };
           img.onerror = err => {
             console.warn(err.stack);
@@ -611,6 +613,8 @@
     const bagMesh = _makeBagMesh();
     scene.add(bagMesh);
 
+    const itemMeshes = [];
+
     const _loadEquipment = () => {
       console.log('load equipment');
       return; // XXX
@@ -742,6 +746,7 @@
       }
     };
     input.on('gripdown', _gripdown);
+
     const _release = e => {
       const {side, grabbable} = e;
 
@@ -818,6 +823,42 @@
             controllerMesh.position.fromArray(gamepad.pose.position);
             controllerMesh.quaternion.fromArray(gamepad.pose.orientation);
             controllerMesh.updateMatrixWorld();
+          }
+        }
+      };
+      const _updateInteractions = () => {
+        const gamepads = _getGamepads();
+
+        for (let i = 0; i < gamepads.length; i++) {
+          const gamepad = gamepads[i];
+
+          if (gamepad) {
+            const controllerMesh = controllerMeshes[i];
+
+            let pressed = false;
+            let grabbed = false;
+            let menuPressed = false;
+            if (gamepad) {
+              pressed = gamepad.buttons[1].pressed;
+              grabbed = gamepad.buttons[2].pressed;
+              menuPressed = gamepad.buttons[3].pressed;
+            }
+
+            const lastGrabbed = lastGrabbeds[i];
+            lastGrabbeds[i] = grabbed;
+            if (grabbed && !lastGrabbed) {
+              const targetObject = itemMeshes.find(itemMesh =>
+                itemMesh.position.distanceTo(controllerMesh.position) < 0.1
+              );
+              if (targetObject) {
+                grabbedObjects[i] = targetObject;
+              }
+            } else if (!grabbed && lastGrabbed) {
+              const grabbedObject = grabbedObjects[i];
+              if (grabbedObject) {
+                grabbedObjects[i] = null;
+              }
+            }
           }
         }
       };
@@ -950,6 +991,7 @@
       };
       _updateControls();
       _updateControllers();
+      _updateInteractions();
       _updateObjects();
       _updateBagMesh();
       _updateEquipmentBoxMeshes();
