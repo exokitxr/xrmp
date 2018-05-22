@@ -219,15 +219,39 @@
         }
         xrid = new XRID(xridUrl, opts);
         xrid.onauthenticate = () => {
-          xrid.get('lol', 'text')
-            .then(v => {
-              console.log('xrid get', v);
+          xrid.get('items', 'json')
+            .then((itemsJson = []) => {
+              for (let i = 0; i < bagMesh.equipmentBoxMeshes.length; i++) {
+                const itemJson = itemsJson[i];
+                if (itemJson) {
+                  const {itemType} = itemJson;
+                  const objectMesh = new THREE.Object3D();
+                  objectMesh.state = {
+                    itemType,
+                  };
 
-              return xrid.set('lol', 'woot-' + Math.random())
+                  _requestSpriteMesh(itemType)
+                    .then(spriteMesh => {
+                      objectMesh.add(spriteMesh);
+                    })
+                    .catch(err => {
+                      console.warn(err.stack);
+                    });
+
+                  bagMesh.equipmentBoxMeshes[i].add(objectMesh);
+                }
+              }
             })
-            .then(v => {
-              console.log('xrid set');
+            .catch(err => {
+              console.warn(err.stack);
             });
+
+          /* xrid.set('items', [
+            null,
+            {
+              itemType: 'lightsaber',
+            }
+          ]); */
         };
         xrid.onerror = err => {
           console.log('xrid error', err);
