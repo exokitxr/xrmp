@@ -845,7 +845,7 @@
             const lastGrabbed = lastGrabbeds[i];
             lastGrabbeds[i] = grabbed;
             if (grabbed && !lastGrabbed) {
-              const objectMeshes = xrmpThree.getObjectMeshes();
+              const objectMeshes = mp.getObjectMeshes();
               let targetObject = objectMeshes.find(objectMesh =>
                 objectMesh.parent === scene && objectMesh.position.distanceTo(controllerMesh.position) < 0.1
               );
