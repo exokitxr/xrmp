@@ -847,9 +847,20 @@
             const lastGrabbed = lastGrabbeds[i];
             lastGrabbeds[i] = grabbed;
             if (grabbed && !lastGrabbed) {
-              const targetObject = itemMeshes.find(itemMesh =>
-                itemMesh.position.distanceTo(controllerMesh.position) < 0.1
+              let targetObject = itemMeshes.find(itemMesh =>
+                itemMesh.parent === scene && itemMesh.position.distanceTo(controllerMesh.position) < 0.1
               );
+              if (!targetObject) {
+                const equipmentHoverState = equipmentHoverStates[i];
+                const {equipmentIndex} = equipmentHoverState;
+
+                if (equipmentIndex !== -1) {
+                  const equipmentBoxMesh = bagMesh.equipmentBoxMeshes[equipmentIndex];
+                  const itemMesh = equipmentBoxMesh.children[0];
+                  scene.add(itemMesh);
+                  targetObject = itemMesh;
+                }
+              }
               if (targetObject) {
                 grabbedObjects[i] = targetObject;
               }
@@ -884,12 +895,12 @@
             grabbedObject.quaternion.fromArray(gamepad.pose.orientation);
             grabbedObject.updateMatrixWorld();
 
-            if (_isMpOpen()) {
+            /* if (_isMpOpen()) { // XXX
               grabbedObject.position.toArray(grabbedObject.object.objectMatrix.position);
               grabbedObject.quaternion.toArray(grabbedObject.object.objectMatrix.quaternion);
 
               grabbedObject.object.pushUpdate();
-            }
+            } */
           }
         }
       };
