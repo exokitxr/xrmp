@@ -219,7 +219,15 @@
         }
         xrid = new XRID(xridUrl, opts);
         xrid.onauthenticate = () => {
-          console.log('xrid authenticate');
+          xrid.get('lol', 'text')
+            .then(v => {
+              console.log('xrid get', v);
+
+              return xrid.set('lol', 'woot-' + Math.random())
+            })
+            .then(v => {
+              console.log('xrid set');
+            });
         };
         xrid.onerror = err => {
           console.log('xrid error', err);
