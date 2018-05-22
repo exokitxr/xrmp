@@ -11,10 +11,12 @@
 </head>
 <body>
   <canvas id=canvas></canvas>
+  <script src="js/keycode.js"></script>
   <script src="js/three.js"></script>
   <script src="js/vr-display.js"></script>
   <script src="js/skin.js"></script>
   <script src="js/OBJLoader.js"></script>
+  <script src="js/sprite3d.js"></script>
   <script src="../js/xrmp.js"></script>
   <script src="../js/xrmp-three.js"></script>
   <script>
@@ -34,52 +36,103 @@
 
     const SIDES = ['left', 'right'];
     const FLOOR_SIZE = 20;
+    const ITEMS = [
+      'apple',
+      'axe',
+      'blank',
+      'bow',
+      'chest',
+      'coal',
+      'craftingtable',
+      'crd',
+      'drone',
+      'file',
+      'firework',
+      'flintsteel',
+      'gun',
+      'hammer',
+      'hide',
+      'iron',
+      'lightsaber',
+      'map',
+      'meat',
+      'mirror',
+      'paper',
+      'pickaxe',
+      'sand',
+      'skin',
+      'space',
+      'stick',
+      'stone',
+      'sword',
+      'torch',
+      'wood',
+    ];
 
     (() => {
-        const graphImg = new Image();
-        graphImg.src = 'img/textures/graphy.png';
-        graphImg.crossOrigin = 'Anonymous';
-        graphImg.onload = () => {
-          const floorMesh = (() => {
-            const geometry = new THREE.PlaneBufferGeometry(FLOOR_SIZE, FLOOR_SIZE)
-              .applyMatrix(new THREE.Matrix4().makeRotationFromQuaternion(
-                new THREE.Quaternion().setFromUnitVectors(
-                  new THREE.Vector3(0, 0, 1),
-                  new THREE.Vector3(0, 1, 0)
-                )
-              ));
-            const uvs = geometry.attributes.uv.array;
-            const numUvs = uvs.length / 2;
-            for (let i = 0; i < numUvs; i++) {
-              uvs[i * 2 + 0] *= FLOOR_SIZE / 10 * 2;
-              uvs[i * 2 + 1] *= FLOOR_SIZE / 10;
-            }
+      const graphImg = new Image();
+      graphImg.src = 'img/textures/graphy.png';
+      graphImg.crossOrigin = 'Anonymous';
+      graphImg.onload = () => {
+        const floorMesh = (() => {
+          const geometry = new THREE.PlaneBufferGeometry(FLOOR_SIZE, FLOOR_SIZE)
+            .applyMatrix(new THREE.Matrix4().makeRotationFromQuaternion(
+              new THREE.Quaternion().setFromUnitVectors(
+                new THREE.Vector3(0, 0, 1),
+                new THREE.Vector3(0, 1, 0)
+              )
+            ));
+          const uvs = geometry.attributes.uv.array;
+          const numUvs = uvs.length / 2;
+          for (let i = 0; i < numUvs; i++) {
+            uvs[i * 2 + 0] *= FLOOR_SIZE / 10 * 2;
+            uvs[i * 2 + 1] *= FLOOR_SIZE / 10;
+          }
 
-            const texture = new THREE.Texture(
-              graphImg,
-              THREE.UVMapping,
-              THREE.RepeatWrapping,
-              THREE.RepeatWrapping,
-              THREE.NearestFilter,
-              THREE.NearestFilter,
-              THREE.RGBAFormat,
-              THREE.UnsignedByteType,
-              1
-            );
-            texture.needsUpdate = true;
-            const material = new THREE.MeshBasicMaterial({
-              map: texture,
-              side: THREE.DoubleSide,
-            });
-            const mesh = new THREE.Mesh(geometry, material);
-            return mesh;
-          })();
-          scene.add(floorMesh);
-        };
-        graphImg.onerror = err => {
-          console.warn(err.stack);
-        };
-      })();
+          const texture = new THREE.Texture(
+            graphImg,
+            THREE.UVMapping,
+            THREE.RepeatWrapping,
+            THREE.RepeatWrapping,
+            THREE.NearestFilter,
+            THREE.NearestFilter,
+            THREE.RGBAFormat,
+            THREE.UnsignedByteType,
+            1
+          );
+          texture.needsUpdate = true;
+          const material = new THREE.MeshBasicMaterial({
+            map: texture,
+            side: THREE.DoubleSide,
+          });
+          const mesh = new THREE.Mesh(geometry, material);
+          return mesh;
+        })();
+        scene.add(floorMesh);
+      };
+      graphImg.onerror = err => {
+        console.warn(err.stack);
+      };
+    })();
+
+    (() => {
+      const size = 5;
+      for (let z = 0; z < size; z++) {
+        for (let x = 0; x < size; x++) {
+          const img = new Image();
+          const item = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+          img.src = `img/items/${item}.png`;
+          img.onload = () => {
+            const spriteMesh = sprite3d.makeSpriteMesh(img);
+            spriteMesh.position.set(-1/2 + x/(size-1), 0.1, -1/2 + z/(size-1));
+            scene.add(spriteMesh);
+          };
+          img.onerror = err => {
+            console.warn(err.stack);
+          };
+        }
+      }
+    })();
 
     const upVector = new THREE.Vector3(0, 1, 0);
     const armQuaternionOffset = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, -1));
@@ -646,86 +699,61 @@
         }
       };
 
-      if (!window.document.pointerLockElement) {
-        switch (e.keyCode) {
-          case 99: { // C
-            if (e.ctrlKey) {
-              document.execCommand('copy');
-            } else {
-              _handleKey(_normalizeKeycode(e.keyCode), e.shiftKey);
+      switch (e.keyCode) {
+        case 105: { // I
+          console.log('enable VR');
+
+          const display = displays.find(display =>
+            display.constructor.name === 'VRDisplay'
+          );
+          if (display) {
+            if (window.document.pointerLockElement) {
+              window.document.exitPointerLock();
             }
-            break;
+            renderer.vr.setDevice(null);
+
+            display.requestPresent([{source: canvas}])
+              .then(() => {
+                renderer.vr.setDevice(display);
+              });
           }
-          case 118: { // V
-            if (e.ctrlKey) {
-              document.execCommand('paste');
-            } else {
-              _handleKey(_normalizeKeycode(e.keyCode), e.shiftKey);
-            }
-            break;
-          }
-          default: {
-            _handleKey(_normalizeKeycode(e.keyCode), e.shiftKey);
-            break;
-          }
+          break;
         }
-      } else {
-        switch (e.keyCode) {
-          case 105: { // I
-            console.log('enable VR');
+        case 111: { // O
+          console.log('enable ML');
 
-            const display = displays.find(display =>
-              display.constructor.name === 'VRDisplay'
-            );
-            if (display) {
-              if (window.document.pointerLockElement) {
-                window.document.exitPointerLock();
-              }
-              renderer.vr.setDevice(null);
-
-              display.requestPresent([{source: canvas}])
-                .then(() => {
-                  renderer.vr.setDevice(display);
-                });
+          const display = displays.find(display =>
+            display.constructor.name === 'MLDisplay'
+          );
+          if (display) {
+            if (window.document.pointerLockElement) {
+              window.document.exitPointerLock();
             }
-            break;
+            renderer.vr.setDevice(null);
+
+            display.requestPresent([{source: canvas}])
+              .then(() => {
+                renderer.vr.setDevice(display);
+
+                scene.background = null;
+              });
           }
-          case 111: { // O
-            console.log('enable ML');
+          break;
+        }
+        case 112: { // P
+          if (_isMpOpen() && !voicechatEnabled) {
+            console.log('enable voicechat');
 
-            const display = displays.find(display =>
-              display.constructor.name === 'MLDisplay'
-            );
-            if (display) {
-              if (window.document.pointerLockElement) {
-                window.document.exitPointerLock();
-              }
-              renderer.vr.setDevice(null);
+            navigator.mediaDevices.getUserMedia({
+              audio: true,
+            })
+              .then(mediaStream => {
+                mp.localPlayerMesh.setMediaStream(mediaStream);
+              });
 
-              display.requestPresent([{source: canvas}])
-                .then(() => {
-                  renderer.vr.setDevice(display);
-
-                  scene.background = null;
-                });
-            }
-            break;
+            voicechatEnabled = true;
           }
-          case 112: { // P
-            if (_isMpOpen() && !voicechatEnabled) {
-              console.log('enable voicechat');
-
-              navigator.mediaDevices.getUserMedia({
-                audio: true,
-              })
-                .then(mediaStream => {
-                  mp.localPlayerMesh.setMediaStream(mediaStream);
-                });
-
-              voicechatEnabled = true;
-            }
-            break;
-          }
+          break;
         }
       }
     });
