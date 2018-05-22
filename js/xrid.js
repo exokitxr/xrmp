@@ -637,7 +637,7 @@ class XRID extends EventEmitter {
         .then(res => {
           if (res.status >= 200 && res.status < 300) {
             if (format === 'json') {
-              return res.text();
+              return res.json();
             } else if (format === 'text') {
               return res.text();
             } else {
