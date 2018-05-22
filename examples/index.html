@@ -65,10 +65,9 @@
       matrix.decompose(position, rotation, scale);
       return {position, rotation, scale};
     };
-    const _requestSpriteMesh = () => new Promise((accept, reject) => {
+    const _requestSpriteMesh = itemType => new Promise((accept, reject) => {
       const img = new Image();
-      const item = ITEMS[Math.floor(Math.random() * ITEMS.length)];
-      img.src = `img/items/${item}.png`;
+      img.src = `img/items/${itemType}.png`;
       img.onload = () => {
         const spriteMesh = sprite3d.makeSpriteMesh(img);
         accept(spriteMesh);
@@ -222,9 +221,14 @@
               if (!objectMesh) {
                 const objectMesh = mp.createObjectMesh(i);
                 objectMesh.position.set(-1/2 + x/(size-1), 0.1, -1/2 + z/(size-1));
+
+                const itemType = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+                objectMesh.object.setState({
+                  itemType,
+                });
                 objectMesh.needsUpdate = true;
 
-                _requestSpriteMesh()
+                _requestSpriteMesh(itemType)
                   .then(spriteMesh => {
                     objectMesh.add(spriteMesh);
                   })
@@ -255,7 +259,9 @@
           scene.remove(playerMesh);
         };
         xrmpThree.onobjectadd = objectMesh => {
-          _requestSpriteMesh()
+          const {itemType} = objectMesh.object.state;
+
+          _requestSpriteMesh(itemType)
             .then(spriteMesh => {
               objectMesh.add(spriteMesh);
             })
