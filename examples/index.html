@@ -856,10 +856,10 @@
             grabbedObject.updateMatrixWorld();
 
             if (_isMpOpen()) {
-              objectMesh.position.toArray(objectMesh.object.objectMatrix.position);
-              objectMesh.quaternion.toArray(objectMesh.object.objectMatrix.quaternion);
+              grabbedObject.position.toArray(grabbedObject.object.objectMatrix.position);
+              grabbedObject.quaternion.toArray(grabbedObject.object.objectMatrix.quaternion);
 
-              objectMesh.object.pushUpdate();
+              grabbedObject.object.pushUpdate();
             }
           }
         }
