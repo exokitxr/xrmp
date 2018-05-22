@@ -1,3 +1,5 @@
+(() => {
+
 const xrmp = ((
   module = ({
     exports: {},
@@ -1027,3 +1029,5 @@ if (typeof window !== 'undefined') {
   window.XRObject = xrmp.XRObject;
   window.XRMultiplayer = xrmp.XRMultiplayer;
 }
+
+})();

@@ -1,3 +1,5 @@
+(() => {
+
 const xrid = ((
   module = ({
     exports: {},
@@ -565,32 +567,45 @@ class XRID extends EventEmitter {
 
     let user = null;
 
-    const _throwError = e => {
+    const _throwError = err => {
       Promise.resolve()
         .then(() => {
           const e = new XRIDEvent('error');
-          e.error = error;
+          e.error = err;
           this.emit(e.type, e);
         });
     };
 
     if (url) {
-      if (username && password) {
+      const opts = (() => {
+        if (username && password) {
+          return {
+            username,
+            password,
+          };
+        } else if (username && token) {
+          return {
+            username,
+            token,
+          };
+        } else {
+          return null;
+        }
+      })();
+
+      if (opts) {
         fetch(url + '/l', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            username,
-            password,
-          }),
+          body: JSON.stringify(opts),
         })
           .then(res => {
-            if (res.statusCode >= 300 && res.statusCode < 300) {
+            if (res.status >= 200 && res.status < 300) {
               return res.json();
             } else {
-              return Promise.reject(new Error(`got invalid status code ${res.statusCode}`));
+              return Promise.reject(new Error(`got invalid status code ${res.status}`));
             }
           })
           .then(newUser => {
@@ -599,26 +614,6 @@ class XRID extends EventEmitter {
             const e = new XRIDEvent('authenticate');
             e.user = user;
             this.emit(e.type, e);
-          })
-          .catch(err => {
-            _throwError(err);
-          });
-      } else if (token) {
-        fetch(url + '/l', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            token,
-          }),
-        })
-          .then(res => {
-            if (res.statusCode >= 300 && res.statusCode < 300) {
-              return res.json();
-            } else {
-              return Promise.reject(new Error(`got invalid status code ${res.statusCode}`));
-            }
           })
           .catch(err => {
             _throwError(err);
@@ -661,3 +656,5 @@ return module.exports;
 if (typeof window !== 'undefined') {
   window.XRID = xrid.XRID;
 }
+
+})();

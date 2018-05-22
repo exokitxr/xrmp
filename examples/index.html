@@ -17,6 +17,7 @@
   <script src="js/skin.js"></script>
   <script src="js/OBJLoader.js"></script>
   <script src="js/sprite3d.js"></script>
+  <script src="../js/xrid.js"></script>
   <script src="../js/xrmp.js"></script>
   <script src="../js/xrmp-three.js"></script>
   <script>
@@ -199,19 +200,44 @@
     };
 
     let voicechatEnabled = false;
-    const mp = (() => {
-      const url = getQueryVariable('m');
-      if (url) {
-        const xrmp = new XRMultiplayer(url);
-        const xrmpThree = new XRMultiplayerTHREE(xrmp);
-        xrmpThree.localPlayerMesh = null;
-        xrmpThree.onsync = () => {
-          camera.add(xrmpThree.getAudioListener());
+    const {xrid, xrmp} = (() => {
+      let xrid = null;
+      const xridUrl = getQueryVariable('i');
+      const u = getQueryVariable('u');
+      const p = getQueryVariable('p');
+      const t = getQueryVariable('t');
+      if (xridUrl && u && (p || t)) {
+        const opts = {};
+        if (u) {
+          opts.username = u;
+        }
+        if (p) {
+          opts.password = p;
+        }
+        if (t) {
+          opts.token = t;
+        }
+        xrid = new XRID(xridUrl, opts);
+        xrid.onauthenticate = () => {
+          console.log('xrid authenticate');
+        };
+        xrid.onerror = err => {
+          console.log('xrid error', err);
+        };
+      }
 
-          const localPlayerMesh = xrmpThree.createLocalPlayerMesh();
-          xrmpThree.localPlayerMesh = localPlayerMesh;
+      let xrmp = null;
+      const xrmpUrl = getQueryVariable('m');
+      if (xrmpUrl) {
+        xrmp = new XRMultiplayerTHREE(new XRMultiplayer(xrmpUrl));
+        xrmp.localPlayerMesh = null;
+        xrmp.onsync = () => {
+          camera.add(xrmp.getAudioListener());
 
-          const objectMeshes = xrmpThree.getObjectMeshes();
+          const localPlayerMesh = xrmp.createLocalPlayerMesh();
+          xrmp.localPlayerMesh = localPlayerMesh;
+
+          const objectMeshes = xrmp.getObjectMeshes();
           const size = 5;
           let i = 0;
           for (let z = 0; z < size; z++) {
@@ -219,7 +245,7 @@
               const objectMesh = objectMeshes.find(objectMesh => objectMesh.object.id === i);
 
               if (!objectMesh) {
-                const objectMesh = mp.createObjectMesh(i);
+                const objectMesh = xrmp.createObjectMesh(i);
                 objectMesh.position.set(-1/2 + x/(size-1), 0.1, -1/2 + z/(size-1));
 
                 const itemType = ITEMS[Math.floor(Math.random() * ITEMS.length)];
@@ -243,22 +269,22 @@
             }
           }
         };
-        xrmpThree.onclose = () => {
+        xrmp.onclose = () => {
           console.log('mp close');
         };
-        xrmpThree.onerror = e => {
+        xrmp.onerror = e => {
           console.warn('mp error', e.error);
         };
-        xrmpThree.onplayerenter = playerMesh => {
+        xrmp.onplayerenter = playerMesh => {
           const skinMesh = _makeSkinMesh(playerMesh);
           playerMesh.add(skinMesh);
 
           scene.add(playerMesh);
         };
-        xrmpThree.onplayerleave = playerMesh => {
+        xrmp.onplayerleave = playerMesh => {
           scene.remove(playerMesh);
         };
-        xrmpThree.onobjectadd = objectMesh => {
+        xrmp.onobjectadd = objectMesh => {
           const {itemType} = objectMesh.object.state;
 
           _requestSpriteMesh(itemType)
@@ -271,15 +297,17 @@
 
           scene.add(objectMesh);
         };
-        xrmpThree.onobjectremove = objectMesh => {
+        xrmp.onobjectremove = objectMesh => {
           scene.remove(objectMesh);
         };
-        return xrmpThree;
-      } else {
-        return null;
       }
+
+      return {
+        xrid,
+        xrmp,
+      };
     })();
-    const _isMpOpen = () => Boolean(mp && mp.localPlayerMesh);
+    const _isMpOpen = () => Boolean(xrmp && xrmp.localPlayerMesh);
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -851,7 +879,7 @@
             const lastGrabbed = lastGrabbeds[i];
             lastGrabbeds[i] = grabbed;
             if (grabbed && !lastGrabbed) {
-              const objectMeshes = mp.getObjectMeshes();
+              const objectMeshes = xrmp.getObjectMeshes();
               let targetObject = objectMeshes.find(objectMesh =>
                 objectMesh.parent === scene && objectMesh.position.distanceTo(controllerMesh.position) < 0.1
               );
@@ -908,17 +936,17 @@
       };
       const _updateMp = () => {
         if (_isMpOpen()) {
-          mp.localPlayerMesh.hmd.position.copy(camera.position);
-          mp.localPlayerMesh.hmd.quaternion.copy(camera.quaternion);
+          xrmp.localPlayerMesh.hmd.position.copy(camera.position);
+          xrmp.localPlayerMesh.hmd.quaternion.copy(camera.quaternion);
 
           for (let i = 0; i < 2; i++) {
             const controllerMesh = controllerMeshes[i];
-            mp.localPlayerMesh.gamepads[i].visible = true;
-            mp.localPlayerMesh.gamepads[i].position.copy(controllerMesh.position);
-            mp.localPlayerMesh.gamepads[i].quaternion.copy(controllerMesh.quaternion);
+            xrmp.localPlayerMesh.gamepads[i].visible = true;
+            xrmp.localPlayerMesh.gamepads[i].position.copy(controllerMesh.position);
+            xrmp.localPlayerMesh.gamepads[i].quaternion.copy(controllerMesh.quaternion);
           }
 
-          mp.pushUpdate();
+          xrmp.pushUpdate();
         }
       };
       const _updateBagMesh = () => {
@@ -1190,7 +1218,7 @@
               audio: true,
             })
               .then(mediaStream => {
-                mp.localPlayerMesh.setMediaStream(mediaStream);
+                xrmp.localPlayerMesh.setMediaStream(mediaStream);
               });
 
             voicechatEnabled = true;
