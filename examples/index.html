@@ -885,8 +885,11 @@
         }
       };
       const _updateBagMesh = () => {
-        bagMesh.position.copy(camera.position);
-        const hmdEuler = new THREE.Euler().setFromQuaternion(camera.quaternion, camera.rotation.order);
+        const vrCamera = renderer.vr.getCamera(camera);
+        vrCamera.matrixWorld.decompose(vrCamera.position, vrCamera.quaternion, vrCamera.scale);
+
+        bagMesh.position.copy(vrCamera.position);
+        const hmdEuler = new THREE.Euler().setFromQuaternion(vrCamera.quaternion, camera.rotation.order);
         bagMesh.rotation.y = hmdEuler.y;
         bagMesh.updateMatrixWorld();
       };
