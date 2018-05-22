@@ -857,6 +857,16 @@
               const grabbedObject = grabbedObjects[i];
               if (grabbedObject) {
                 grabbedObjects[i] = null;
+
+                const equipmentHoverState = equipmentHoverStates[i];
+                const {equipmentIndex} = equipmentHoverState;
+                if (equipmentIndex !== -1) {
+                  const equipmentBoxMesh = bagMesh.equipmentBoxMeshes[equipmentIndex];
+                  grabbedObject.position.set(0, 0, 0);
+                  grabbedObject.quaternion.set(0, 0, 0, 1);
+                  equipmentBoxMesh.add(grabbedObject);
+                  equipmentBoxMesh.updateMatrixWorld();
+                }
               }
             }
           }
