@@ -722,10 +722,11 @@ class XRRemotePlayer extends EventEmitter {
 module.exports.XRRemotePlayer = XRRemotePlayer;
 
 class XRObject extends EventEmitter {
-  constructor(id = _makeId(), xrmp) {
+  constructor(id = _makeId(), state = {}, xrmp) {
     super();
 
     this.id = id;
+    this.state = state;
     this.xrmp = xrmp;
 
     this.objectMatrix = _makeObjectMatrix();
@@ -846,9 +847,9 @@ class XRMultiplayer extends EventEmitter {
             break;
           }
           case 'objectAdd': {
-            const {id} = j;
+            const {id, state} = j;
 
-            const object = new XRObject(id, this);
+            const object = new XRObject(id, state, this);
             this.objects.push(object);
 
             const e = new XRMultiplayerEvent('objectadd');
@@ -942,8 +943,8 @@ class XRMultiplayer extends EventEmitter {
       throw new Error('player not added');
     }
   }
-  addObject(id) {
-    const object = new XRObject(id, this);
+  addObject(id, state) {
+    const object = new XRObject(id, state, this);
     this.objects.push(object);
     return object;
   }
