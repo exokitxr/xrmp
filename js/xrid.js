@@ -643,6 +643,8 @@ class XRID extends EventEmitter {
             } else {
               return res.arrayBuffer();
             }
+          } else if (res.status === 404) {
+            return Promise.resolve(undefined);
           } else {
             return Promise.reject(new Error(`got invalid status code ${res.status}`));
           }
