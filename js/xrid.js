@@ -565,7 +565,8 @@ class XRID extends EventEmitter {
   constructor(url, {username, password, token} = {}) {
     super();
 
-    let user = null;
+    this.url = url;
+    this.user = null;
 
     const _throwError = err => {
       Promise.resolve()
@@ -608,8 +609,8 @@ class XRID extends EventEmitter {
               return Promise.reject(new Error(`got invalid status code ${res.status}`));
             }
           })
-          .then(newUser => {
-            user = newUser;
+          .then(user => {
+            this.user = user;
 
             const e = new XRIDEvent('authenticate');
             e.user = user;
@@ -623,6 +624,55 @@ class XRID extends EventEmitter {
       }
     } else {
       _throwError(new Error('invalid arguments: url required'));
+    }
+  }
+  get(k, format = 'arraybuffer') {
+    if (this.user) {
+      return fetch(this.url + '/u/' + this.user.username + '/' + k, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Token ${this.user.username} ${this.user.token}`,
+        },
+      })
+        .then(res => {
+          if (res.status >= 200 && res.status < 300) {
+            if (format === 'json') {
+              return res.text();
+            } else if (format === 'text') {
+              return res.text();
+            } else {
+              return res.arrayBuffer();
+            }
+          } else {
+            return Promise.reject(new Error(`got invalid status code ${res.status}`));
+          }
+        });
+    } else {
+      return Promise.reject(new Error('not logged in'));
+    }
+  }
+  set(k, v) {
+    if (this.user) {
+      return fetch(this.url + '/u/' + this.user.username + '/' + k, {
+        method: 'PUT',
+        body: v,
+        headers: {
+          'Authorization': `Token ${this.user.username} ${this.user.token}`,
+          'Content-Type': 'application/octet-stream',
+        },
+      })
+        .then(res => {
+          if (res.status >= 200 && res.status < 300) {
+            return res.json();
+          } else {
+            return res.text()
+              .then(text => {
+                 return Promise.reject(new Error(`got invalid status code ${res.status}: ${text}`));
+              });
+          }
+        });
+    } else {
+      return Promise.reject(new Error('not logged in'));
     }
   }
   addEventListener(name, fn) {
