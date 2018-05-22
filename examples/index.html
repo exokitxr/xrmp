@@ -895,10 +895,7 @@
             grabbedObject.updateMatrixWorld();
 
             if (_isMpOpen()) {
-              grabbedObject.position.toArray(grabbedObject.object.objectMatrix.position);
-              grabbedObject.quaternion.toArray(grabbedObject.object.objectMatrix.quaternion);
-
-              grabbedObject.object.pushUpdate();
+              grabbedObject.needsUpdate = true;
             }
           }
         }
