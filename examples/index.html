@@ -361,14 +361,6 @@
 
         const uniforms = THREE.UniformsUtils.clone(skin.SKIN_SHADER.uniforms);
 
-        const handMeshes = Array(2);
-        for (let i = 0; i < handMeshes.length; i++) {
-          const handMesh = _makeHandMesh();
-          scene.add(handMesh);
-          handMeshes[i] = handMesh;
-        }
-        mesh.handMeshes = handMeshes;
-
         mesh.onBeforeRender = (function(onBeforeRender) {
           return function() {
             mesh.material.uniforms.headRotation.value.copy(uniforms.headRotation.value);
@@ -430,10 +422,6 @@
               armRotation.value.set(0, 0, 0, 1);
             }
           }
-
-          /* for (let i = 0; i < handMeshes.length; i++) { // XXX
-            handMeshes[i].updatePlayerMatrix(playerMatrix.hands[i]);
-          } */
         };
 
         const skinImg = new Image();
@@ -875,11 +863,6 @@
             mp.localPlayerMesh.gamepads[i].position.copy(controllerMesh.position);
             mp.localPlayerMesh.gamepads[i].quaternion.copy(controllerMesh.quaternion);
           }
-
-          /* for (let i = 0; i < 2; i++) { // XXX
-            mp.localPlayer.playerMatrix.hands[i].enabled[0] = +handMeshes[i].visible;
-            mp.localPlayer.playerMatrix.hands[i].data.set(handMeshes[i].handFrameData);
-          } */
 
           mp.pushUpdate();
         }
