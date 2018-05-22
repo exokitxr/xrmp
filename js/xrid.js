@@ -655,6 +655,10 @@ class XRID extends EventEmitter {
   }
   set(k, v) {
     if (this.user) {
+      if (typeof v === 'object' && (v.constructor === Object || v.constructor === Array)) {
+        v = JSON.stringify(v);
+      }
+
       return fetch(this.url + '/u/' + this.user.username + '/' + k, {
         method: 'PUT',
         body: v,
