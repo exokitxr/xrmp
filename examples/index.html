@@ -65,6 +65,18 @@
       matrix.decompose(position, rotation, scale);
       return {position, rotation, scale};
     };
+    const _requestSpriteMesh = () => new Promise((accept, reject) => {
+      const img = new Image();
+      const item = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+      img.src = `img/items/${item}.png`;
+      img.onload = () => {
+        const spriteMesh = sprite3d.makeSpriteMesh(img);
+        accept(spriteMesh);
+      };
+      img.onerror = err => {
+        reject(err);
+      };
+    });
 
     const SIDES = ['left', 'right'];
     const FLOOR_SIZE = 20;
@@ -149,27 +161,6 @@
       };
     })();
 
-    (() => {
-      const size = 5;
-      for (let z = 0; z < size; z++) {
-        for (let x = 0; x < size; x++) {
-          const img = new Image();
-          const item = ITEMS[Math.floor(Math.random() * ITEMS.length)];
-          img.src = `img/items/${item}.png`;
-          img.onload = () => {
-            const spriteMesh = sprite3d.makeSpriteMesh(img);
-            spriteMesh.position.set(-1/2 + x/(size-1), 0.1, -1/2 + z/(size-1));
-            scene.add(spriteMesh);
-
-            itemMeshes.push(spriteMesh);
-          };
-          img.onerror = err => {
-            console.warn(err.stack);
-          };
-        }
-      }
-    })();
-
     const zeroVector = new THREE.Vector3(0, 0, 0);
     const zeroQuaternion = new THREE.Quaternion();
     const oneVector = new THREE.Vector3(1, 1, 1);
@@ -212,15 +203,6 @@
     const mp = (() => {
       const url = getQueryVariable('m');
       if (url) {
-        const _makeCubeMesh = () => {
-          const geometry = new THREE.BoxBufferGeometry(0.1, 0.1, 0.1);
-          const material = new THREE.MeshPhongMaterial({
-            color: 0xFF0000,
-          });
-          const mesh = new THREE.Mesh(geometry, material);
-          return mesh;
-        };
-
         const xrmp = new XRMultiplayer(url);
         const xrmpThree = new XRMultiplayerTHREE(xrmp);
         xrmpThree.localPlayerMesh = null;
@@ -230,19 +212,32 @@
           const localPlayerMesh = xrmpThree.createLocalPlayerMesh();
           xrmpThree.localPlayerMesh = localPlayerMesh;
 
-          /* const objectId = 1;
           const objectMeshes = xrmpThree.getObjectMeshes();
-          const objectMesh = objectMeshes.find(objectMesh => objectMesh.object.id === objectId);
-          if (!objectMesh) {
-            const objectMesh = mp.createObjectMesh(objectId);
+          const size = 5;
+          let i = 0;
+          for (let z = 0; z < size; z++) {
+            for (let x = 0; x < size; x++) {
+              const objectMesh = objectMeshes.find(objectMesh => objectMesh.object.id === i);
 
-            const cubeMesh = _makeCubeMesh();
-            objectMesh.add(cubeMesh);
+              if (!objectMesh) {
+                const objectMesh = mp.createObjectMesh(i);
+                objectMesh.position.set(-1/2 + x/(size-1), 0.1, -1/2 + z/(size-1));
+                objectMesh.needsUpdate = true;
 
-            objectMesh.object.setUpdateExpression('[1,2,3]');
+                _requestSpriteMesh()
+                  .then(spriteMesh => {
+                    objectMesh.add(spriteMesh);
+                  })
+                  .catch(err => {
+                    console.warn(err.stack);
+                  });
 
-            scene.add(objectMesh);
-          } */
+                scene.add(objectMesh);
+
+                i++;
+              }
+            }
+          }
         };
         xrmpThree.onclose = () => {
           console.log('mp close');
@@ -260,8 +255,13 @@
           scene.remove(playerMesh);
         };
         xrmpThree.onobjectadd = objectMesh => {
-          const cubeMesh = _makeCubeMesh();
-          objectMesh.add(cubeMesh);
+          _requestSpriteMesh()
+            .then(spriteMesh => {
+              objectMesh.add(spriteMesh);
+            })
+            .catch(err => {
+              console.warn(err.stack);
+            });
 
           scene.add(objectMesh);
         };
@@ -613,8 +613,6 @@
     const bagMesh = _makeBagMesh();
     scene.add(bagMesh);
 
-    const itemMeshes = [];
-
     const _loadEquipment = () => {
       console.log('load equipment');
       return; // XXX
@@ -847,8 +845,9 @@
             const lastGrabbed = lastGrabbeds[i];
             lastGrabbeds[i] = grabbed;
             if (grabbed && !lastGrabbed) {
-              let targetObject = itemMeshes.find(itemMesh =>
-                itemMesh.parent === scene && itemMesh.position.distanceTo(controllerMesh.position) < 0.1
+              const objectMeshes = xrmpThree.getObjectMeshes();
+              let targetObject = objectMeshes.find(objectMesh =>
+                objectMesh.parent === scene && objectMesh.position.distanceTo(controllerMesh.position) < 0.1
               );
               if (!targetObject) {
                 const equipmentHoverState = equipmentHoverStates[i];
@@ -856,9 +855,9 @@
 
                 if (equipmentIndex !== -1) {
                   const equipmentBoxMesh = bagMesh.equipmentBoxMeshes[equipmentIndex];
-                  const itemMesh = equipmentBoxMesh.children[0];
-                  scene.add(itemMesh);
-                  targetObject = itemMesh;
+                  const objectMesh = equipmentBoxMesh.children[0];
+                  scene.add(objectMesh);
+                  targetObject = objectMesh;
                 }
               }
               if (targetObject) {
@@ -895,12 +894,12 @@
             grabbedObject.quaternion.fromArray(gamepad.pose.orientation);
             grabbedObject.updateMatrixWorld();
 
-            /* if (_isMpOpen()) { // XXX
+            if (_isMpOpen()) {
               grabbedObject.position.toArray(grabbedObject.object.objectMatrix.position);
               grabbedObject.quaternion.toArray(grabbedObject.object.objectMatrix.quaternion);
 
               grabbedObject.object.pushUpdate();
-            } */
+            }
           }
         }
       };

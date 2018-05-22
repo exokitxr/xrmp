@@ -125,6 +125,7 @@ class XRMultiplayerTHREE {
       const objectMesh = new THREE.Object3D();
       objectMesh.object = object;
       objectMesh.onupdate = null;
+      objectMesh.needsUpdate = false;
       this.objectMeshes.push(objectMesh);
 
       this._bindObjectMesh(objectMesh);
@@ -223,9 +224,16 @@ class XRMultiplayerTHREE {
 
     for (let i = 0; i < this.objectMeshes.length; i++) {
       const objectMesh = this.objectMeshes[i];
-      objectMesh.position.toArray(objectMesh.object.objectMatrix.position);
-      objectMesh.quaternion.toArray(objectMesh.object.objectMatrix.quaternion);
-      objectMesh.object.pushUpdate();
+
+      // console.log('check needs update', objectMesh.needsUpdate);
+
+      if (objectMesh.needsUpdate) {
+        objectMesh.position.toArray(objectMesh.object.objectMatrix.position);
+        objectMesh.quaternion.toArray(objectMesh.object.objectMatrix.quaternion);
+
+        objectMesh.object.pushUpdate();
+        objectMesh.needsUpdate = false;
+      }
     }
   }
   _bindPlayerMeshAudio(playerMesh) {
