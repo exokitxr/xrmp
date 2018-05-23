@@ -185,6 +185,9 @@ class XRMultiplayerTHREE {
 
     return objectMesh;
   }
+  removeObjectMesh(objectMesh) {
+    this.xrmp.removeObject(objectMesh.object);
+  }
   getLocalPlayerMeshes() {
     return this.localPlayerMeshes;
   }
