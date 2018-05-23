@@ -332,6 +332,18 @@
         xrmp.onobjectremove = objectMesh => {
           scene.remove(objectMesh);
         };
+        xrmp.ongeometry = e => {
+          const {positions, normals, indices} = e;
+
+          terrainMesh.geometry.attributes.position.array.set(positions);
+          terrainMesh.geometry.attributes.position.needsUpdate = true;
+          terrainMesh.geometry.attributes.normal.array.set(normals);
+          terrainMesh.geometry.attributes.normal.needsUpdate = true;
+          terrainMesh.geometry.index.array.set(indices);
+          terrainMesh.geometry.index.needsUpdate = true;
+          terrainMesh.geometry.setDrawRange(0, indices.length);
+          terrainMesh.visible = true;
+        };
       }
 
       return {

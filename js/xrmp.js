@@ -549,6 +549,7 @@ const MESSAGE_TYPES = (() => {
     PLAYER_MATRIX: id++,
     AUDIO: id++,
     OBJECT_MATRIX: id++,
+    GEOMETRY: id++,
   };
 })();
 const _makeId = () => Math.floor(Math.random() * 0xFFFFFFFF);
@@ -928,6 +929,21 @@ class XRMultiplayer extends EventEmitter {
           } else {
             console.warn('got unknown object update message', {id});
           }
+        } else if (type === MESSAGE_TYPES.GEOMETRY) {
+          const header = new Uint32Array(data, Uint32Array.BYTES_PER_ELEMENT, 3);
+          const numPositions = header[0];
+          const numNormals = header[1];
+          const numIndices = header[2];
+
+          const positions = new Float32Array(data, Uint32Array.BYTES_PER_ELEMENT + 3*Uint32Array.BYTES_PER_ELEMENT, numPositions);
+          const normals = new Float32Array(data, Uint32Array.BYTES_PER_ELEMENT + 3*Uint32Array.BYTES_PER_ELEMENT + positions.byteLength, numNormals);
+          const indices = new Uint32Array(data, Uint32Array.BYTES_PER_ELEMENT + 3*Uint32Array.BYTES_PER_ELEMENT + positions.byteLength + normals.byteLength, numIndices);
+
+          const e = new XRMultiplayerEvent('geometry');
+          e.positions = positions;
+          e.normals = normals;
+          e.indices = indices;
+          this.emit(e.type, e);
         } else {
           console.warn('unknown binary message type', {type});
         }
@@ -973,6 +989,22 @@ class XRMultiplayer extends EventEmitter {
     } else {
       throw new Error('object not removed');
     }
+  }
+  pushGeometry(positions, normals, indices) {
+    const geometryBuffer = new ArrayBuffer(Uint32Array.BYTES_PER_ELEMENT + 3*Uint32Array.BYTES_PER_ELEMENT + positions.byteLength + normals.byteLength + indices.byteLength);
+
+    new Uint32Array(geometryBuffer, 0, 1)[0] = MESSAGE_TYPES.GEOMETRY;
+
+    const header = new Uint32Array(geometryBuffer, Uint32Array.BYTES_PER_ELEMENT, 3);
+    header[0] = positions.length;
+    header[1] = normals.length;
+    header[2] = indices.length;
+
+    new Float32Array(geometryBuffer, Uint32Array.BYTES_PER_ELEMENT + 3*Uint32Array.BYTES_PER_ELEMENT, positions.length).set(positions);
+    new Float32Array(geometryBuffer, Uint32Array.BYTES_PER_ELEMENT + 3*Uint32Array.BYTES_PER_ELEMENT + positions.byteLength, normals.length).set(normals);
+    new Uint32Array(geometryBuffer, Uint32Array.BYTES_PER_ELEMENT + 3*Uint32Array.BYTES_PER_ELEMENT + positions.byteLength + normals.byteLength, indices.length).set(indices);
+
+    this.ws.send(geometryBuffer);
   }
   addEventListener(name, fn) {
     return this.on(name, fn);
@@ -1024,6 +1056,12 @@ class XRMultiplayer extends EventEmitter {
   }
   set onobjectremove(onobjectremove) {
     _elementSetter(this, 'objectremove', onobjectremove);
+  }
+  get ongeometry() {
+    return _elementGetter(this, 'geometry');
+  }
+  set ongeometry(ongeometry) {
+    _elementSetter(this, 'geometry', ongeometry);
   }
   get onsync() {
     return _elementGetter(this, 'sync');
