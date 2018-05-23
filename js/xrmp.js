@@ -733,17 +733,17 @@ class XRObject extends EventEmitter {
 
     this.objectMatrix = _makeObjectMatrix();
     this.objectMatrix.id[0] = id;
-
-    xrmp.ws.send(JSON.stringify({
+  }
+  sendAdd() {
+    this.xrmp.ws.send(JSON.stringify({
       type: 'objectAdd',
       id: this.id,
     }));
   }
-  setUpdateExpression(expression) {
+  sendRemove() {
     this.xrmp.ws.send(JSON.stringify({
-      type: 'objectSetUpdateExpression',
+      type: 'objectRemove',
       id: this.id,
-      expression,
     }));
   }
   setState(state) {
@@ -751,6 +751,13 @@ class XRObject extends EventEmitter {
       type: 'objectSetState',
       id: this.id,
       state,
+    }));
+  }
+  setUpdateExpression(expression) {
+    this.xrmp.ws.send(JSON.stringify({
+      type: 'objectSetUpdateExpression',
+      id: this.id,
+      expression,
     }));
   }
   pullUpdate(objectMatrix) {
@@ -862,8 +869,12 @@ class XRMultiplayer extends EventEmitter {
           case 'objectRemove': {
             const {id} = j;
 
-            const object = this.objects.find(object => object.id === id);
-            if (object) {
+            const index = this.objects.findIndex(object => object.id === id);
+            if (index !== -1) {
+              const object = this.objects[index];
+
+              this.objects.splice(index, 1);
+
               const e = new XRMultiplayerEvent('objectremove');
               e.object = object;
               this.emit(e.type, e);
@@ -947,6 +958,7 @@ class XRMultiplayer extends EventEmitter {
   }
   addObject(id, state) {
     const object = new XRObject(id, state, this);
+    object.sendAdd();
     this.objects.push(object);
     return object;
   }
@@ -954,9 +966,12 @@ class XRMultiplayer extends EventEmitter {
     const {id} = object;
     const index = this.objects.findIndex(object => object.id === id);
     if (index !== -1) {
+      const object = this.objects[index];
+      object.sendRemove();
+
       this.objects.splice(index, 1);
     } else {
-      throw new Error('object not added');
+      throw new Error('object not removed');
     }
   }
   addEventListener(name, fn) {
