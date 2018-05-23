@@ -749,46 +749,20 @@
     const _makeTerrainMesh = () => {
       const geometry = new THREE.BufferGeometry();
 
-      const positions = Float32Array.from([
-        0, 0, 0,
-        0, 1, 0,
-        1, 1, 0,
-      ]);
+      const size = 200 * 1024;
+      const positions = new Float32Array(size);
       geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3));
-      const normals = Float32Array.from([
-        0, 0, 1,
-        0, 0, 1,
-        0, 0, 1,
-      ]);
+      const normals = new Float32Array(size);
       geometry.addAttribute('normal', new THREE.BufferAttribute(normals, 3));
-      const indices = Uint32Array.from([
-        0, 1, 2,
-      ]);
+      const indices = new Uint32Array(size);
       geometry.setIndex(new THREE.BufferAttribute(indices, 1));
 
       const material = terrainMaterial;
       const mesh = new THREE.Mesh(geometry, material);
+      mesh.visible = false;
       mesh.frustumCulled = false;
+      mesh.metrics = Array(3);
       return mesh;
-    };
-    const _loadTerrainMesh = (terrainMesh, positions, normals, indices) => {
-      let updated = false;
-      if (positions && terrainMesh.geometry.attributes.position.array !== positions) {
-        console.log('update positions', positions.length, positions.slice(0, 9), positions instanceof Float32Array);
-        terrainMesh.geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3));
-        updated = true;
-      }
-      if (normals && terrainMesh.geometry.attributes.normal.array !== normals) {
-        // console.log('update normals', normals.length, normals.slice(0, 9), normals instanceof Float32Array);
-        terrainMesh.geometry.addAttribute('normal', new THREE.BufferAttribute(normals, 3));
-        updated = true;
-      }
-      if (indices && terrainMesh.geometry.index.array !== indices) {
-        // console.log('update indices', indices.length, indices.slice(0, 3), indices instanceof Uint32Array);
-        terrainMesh.geometry.setIndex(new THREE.BufferAttribute(indices, 1));
-        updated = true;
-      }
-      return updated;
     };
     const terrainMesh = _makeTerrainMesh();
     scene.add(terrainMesh);
@@ -1008,9 +982,17 @@
       };
       const _updateTerrain = () => {
         const device = renderer.vr.getDevice();
-        if (device && device.mesh && (device.mesh[0] || device.mesh[1] || device.mesh[2])) {
-          const [positions, normals, indices] = device.mesh;
-          _loadTerrainMesh(terrainMesh, positions, normals, indices);
+        if (device && device.getGeometry) {
+          device.getGeometry(terrainMesh.geometry.attributes.position.array, terrainMesh.geometry.attributes.normal.array, terrainMesh.geometry.index.array, terrainMesh.metrics);
+          terrainMesh.geometry.attributes.position.needsUpdate = true;
+          terrainMesh.geometry.attributes.normal.needsUpdate = true;
+          terrainMesh.geometry.index.needsUpdate = true;
+          terrainMesh.geometry.setDrawRange(0, terrainMesh.metrics[2]);
+          terrainMesh.visible = true;
+
+          if (_isMpOpen()) {
+            xrmp.xrmp.pushGeometry(terrainMesh.geometry.attributes.position.array.slice(0, terrainMesh.metrics[0]), terrainMesh.geometry.attributes.normal.array.slice(0, terrainMesh.metrics[1]), terrainMesh.geometry.index.array.slice(0, terrainMesh.metrics[2]));
+          }
         }
       };
       _updateControls();
