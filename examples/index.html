@@ -679,7 +679,13 @@
     };
     const bagMesh = _makeBagMesh();
     scene.add(bagMesh);
-
+    const _makeEquipmentHoverState = () => ({
+      equipmentIndex: -1,
+    });
+    const equipmentHoverStates = [
+      _makeEquipmentHoverState(),
+      _makeEquipmentHoverState(),
+    ];
     const _saveEquipment = _debounce(next => {
       if (_isIdOpen()) {
         const itemsJson = bagMesh.equipmentBoxMeshes.map(equipmentBoxMesh => {
@@ -708,13 +714,72 @@
       }
     });
 
-    const _makeEquipmentHoverState = () => ({
-      equipmentIndex: -1,
+    const terrainMaterial = new THREE.ShaderMaterial({
+      vertexShader: `\
+        void main() {
+          vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+          vec4 position = projectionMatrix * mvPosition;
+          gl_Position = position;
+        }
+      `,
+      fragmentShader: `\
+        void main() {
+          float originalZ = gl_FragCoord.z / gl_FragCoord.w;
+          float factor = max((10.0 - originalZ) / 10.0, 0.1);
+          if (factor > 0.95) {
+            gl_FragColor.rgba = vec4(1.0, 0.0, 0.0, 1.0);
+          } else {
+            gl_FragColor.rgba = vec4(vec3(factor), 1.0);
+          }
+        }
+      `,
     });
-    const equipmentHoverStates = [
-      _makeEquipmentHoverState(),
-      _makeEquipmentHoverState(),
-    ];
+    const _makeTerrainMesh = () => {
+      const geometry = new THREE.BufferGeometry();
+
+      const positions = Float32Array.from([
+        0, 0, 0,
+        0, 1, 0,
+        1, 1, 0,
+      ]);
+      geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const normals = Float32Array.from([
+        0, 0, 1,
+        0, 0, 1,
+        0, 0, 1,
+      ]);
+      geometry.addAttribute('normal', new THREE.BufferAttribute(normals, 3));
+      const indices = Uint32Array.from([
+        0, 1, 2,
+      ]);
+      geometry.setIndex(new THREE.BufferAttribute(indices, 1));
+
+      const material = terrainMaterial;
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.frustumCulled = false;
+      return mesh;
+    };
+    const _loadTerrainMesh = (terrainMesh, positions, normals, indices) => {
+      let updated = false;
+      if (positions && terrainMesh.geometry.attributes.position.array !== positions) {
+        console.log('update positions', positions.length, positions.slice(0, 9), positions instanceof Float32Array);
+        terrainMesh.geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3));
+        updated = true;
+      }
+      if (normals && terrainMesh.geometry.attributes.normal.array !== normals) {
+        // console.log('update normals', normals.length, normals.slice(0, 9), normals instanceof Float32Array);
+        terrainMesh.geometry.addAttribute('normal', new THREE.BufferAttribute(normals, 3));
+        updated = true;
+      }
+      if (indices && terrainMesh.geometry.index.array !== indices) {
+        // console.log('update indices', indices.length, indices.slice(0, 3), indices instanceof Uint32Array);
+        terrainMesh.geometry.setIndex(new THREE.BufferAttribute(indices, 1));
+        updated = true;
+      }
+      return updated;
+    };
+    const terrainMesh = _makeTerrainMesh();
+    scene.add(terrainMesh);
 
     const position = new THREE.Vector3();
     const velocity = new THREE.Vector3();
@@ -929,12 +994,20 @@
           equipmentBoxMesh.material.polygonOffset = hovered;
         }
       };
+      const _updateTerrain = () => {
+        const device = renderer.vr.getDevice();
+        if (device && device.mesh && (device.mesh[0] || device.mesh[1] || device.mesh[2])) {
+          const [positions, normals, indices] = device.mesh;
+          _loadTerrainMesh(terrainMesh, positions, normals, indices);
+        }
+      };
       _updateControls();
       _updateControllers();
       _updateInteractions();
       _updateObjects();
       _updateBagMesh();
       _updateEquipmentBoxMeshes();
+      _updateTerrain();
       _updateMp();
 
       const device = renderer.vr.getDevice();
