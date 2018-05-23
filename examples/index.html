@@ -339,6 +339,7 @@
         xrmp,
       };
     })();
+    const _isIdOpen = () => Boolean(xrid && xrid.user);
     const _isMpOpen = () => Boolean(xrmp && xrmp.localPlayerMesh);
 
     canvas.width = window.innerWidth;
@@ -679,95 +680,32 @@
     const bagMesh = _makeBagMesh();
     scene.add(bagMesh);
 
-    const _loadEquipment = () => {
-      console.log('load equipment');
-      return; // XXX
-
-      items.requestStorageFiles()
-        .then(storageFiles => storageFiles.find(fileSpec => fileSpec.name === 'bag-vr-data' && fileSpec.ext === 'json'))
-        .then(bagVrDataFile => {
-          if (bagVrDataFile) {
-            return bagVrDataFile.readAsJson();
-          } else {
-            return Promise.resolve(null);
-          }
-        })
-        .then(assetsData => {
-          assetsData = assetsData || [];
-          for (let i = 0; i < assetsData.length; i++) {
-            const assetData = assetsData[i];
-
-            if (assetData) {
-              const {id, name, ext, json, file} = assetData;
-              const itemSpec = {
-                assetId: _makeId(),
-                id,
-                name,
-                ext,
-                json,
-                file,
-                position: zeroVector.toArray().concat(zeroQuaternion.toArray()).concat(localVector.copy(oneVector).multiplyScalar(0.4).toArray()),
-                owner: player.getId(),
-                physics: false,
-                visible: true,
-                open: false,
-              };
-              const grabbable = items.makeItem(itemSpec); // XXX remove these on hte server side on quit via owner binding
-
-              const equipmentBoxMesh = bagMesh.equipmentBoxMeshes[i];
-              equipmentBoxMesh.add(grabbable.mesh);
-              // grabbable.setState(zeroVector, zeroQuaternion, localVector.copy(oneVector).multiplyScalar(0.4));
-
-              equipmentState.assets[i] = grabbable;
-            }
-          }
-        });
-    };
-    _loadEquipment();
     const _saveEquipment = _debounce(next => {
-      console.log('save equipment');
-      return; // XXX
+      if (_isIdOpen()) {
+        const itemsJson = bagMesh.equipmentBoxMeshes.map(equipmentBoxMesh => {
+          const objectMesh = equipmentBoxMesh.children[0];
 
-      items.requestStorageFiles()
-        .then(storageFiles => {
-          const bagVrDataFile = storageFiles.find(fileSpec => fileSpec.name === 'bag-vr-data' && fileSpec.ext === 'json');
-
-          if (bagVrDataFile) {
-            return Promise.resolve(bagVrDataFile);
+          if (objectMesh) {
+            return {
+              itemType: objectMesh.state.itemType,
+            };
           } else {
-            return items.requestMakeStorageFile('bag-vr-data', 'json');
+            return null;
           }
-        })
-        .then(bagVrDataFile => {
-          const assetsData = equipmentState.assets.map(assetInstance => {
-            if (assetInstance) {
-              const assetData = {
-                id: assetInstance.id,
-                name: assetInstance.name,
-                ext: assetInstance.ext,
-              };
-              if (assetInstance.json) {
-                assetData.json = assetInstance.json;
-              }
-              if (assetInstance.file) {
-                assetData.file = assetInstance.file;
-              }
-              return assetData;
-            } else {
-              return null;
-            }
-          });
-          const assetsDataJson = JSON.stringify(assetsData);
-          return bagVrDataFile.write(assetsDataJson);
-        })
-        .then(() => {
-          next();
-        })
-        .catch(err => {
-          console.warn(err);
-
-          next();
         });
+
+        console.log('save items', _isIdOpen(), itemsJson); // XXX
+
+        xrid.set('items', itemsJson)
+          .catch(err => {
+            console.warn(err.stack);
+          })
+          .then(() => {
+            next();
+          });
+      } else {
+        next();
+      }
     });
 
     const equipmentState = {
@@ -921,9 +859,19 @@
 
                 if (equipmentIndex !== -1) {
                   const equipmentBoxMesh = bagMesh.equipmentBoxMeshes[equipmentIndex];
-                  const objectMesh = equipmentBoxMesh.children[0];
+                  const objectMesh = xrmp.createObjectMesh(undefined, equipmentBoxMesh.children[0]);
+                  objectMesh.position.copy(controllerMesh.position);
+                  objectMesh.quaternion.copy(controllerMesh.quaternion);
+                  objectMesh.object.setState({
+                    itemType: objectMesh.state.itemType,
+                  });
+                  objectMesh.needsUpdate = true;
+
                   scene.add(objectMesh);
+
                   targetObject = objectMesh;
+
+                  _saveEquipment();
                 }
               }
               if (targetObject) {
@@ -938,10 +886,19 @@
                 const {equipmentIndex} = equipmentHoverState;
                 if (equipmentIndex !== -1) {
                   const equipmentBoxMesh = bagMesh.equipmentBoxMeshes[equipmentIndex];
+
+                  xrmp.removeObjectMesh(grabbedObject);
+                  grabbedObject.state = {
+                    itemType: grabbedObject.object.state.itemType,
+                  };
+                  grabbedObject.object = null;
+
                   grabbedObject.position.set(0, 0, 0);
                   grabbedObject.quaternion.set(0, 0, 0, 1);
                   equipmentBoxMesh.add(grabbedObject);
                   equipmentBoxMesh.updateMatrixWorld();
+
+                  _saveEquipment();
                 }
               }
             }
