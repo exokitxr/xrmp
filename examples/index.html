@@ -708,16 +708,6 @@
       }
     });
 
-    const equipmentState = {
-      assets: (() => {
-        const numEquipmentBoxMeshes = bagMesh.equipmentBoxMeshes.length;
-        const result = Array(numEquipmentBoxMeshes);
-        for (let i = 0; i < numEquipmentBoxMeshes; i++) {
-          result[i] = null;
-        }
-        return result;
-      })()
-    };
     const _makeEquipmentHoverState = () => ({
       equipmentIndex: -1,
     });
@@ -725,47 +715,6 @@
       _makeEquipmentHoverState(),
       _makeEquipmentHoverState(),
     ];
-
-    /* const _gripdown = e => {
-      const {side} = e;
-
-      const equipmentHoverState = equipmentHoverStates[side];
-      const {equipmentIndex} = equipmentHoverState;
-      if (equipmentIndex !== -1) {
-        const grabbable = equipmentState.assets[equipmentIndex];
-
-        if (grabbable) {
-          const equipmentBoxMesh = bagMesh.equipmentBoxMeshes[equipmentIndex];
-          equipmentBoxMesh.remove(grabbable.mesh);
-          scene.add(grabbable.mesh);
-
-          grabbable.grab(side);
-          grabbable.setOwner(null);
-
-          equipmentState.assets[equipmentIndex] = null;
-          _saveEquipment();
-        }
-      }
-    };
-    input.on('gripdown', _gripdown);
-
-    const _release = e => {
-      const {side, grabbable} = e;
-
-      const equipmentHoverState = equipmentHoverStates[side];
-      const {equipmentIndex} = equipmentHoverState;
-      if (equipmentIndex !== -1) {
-        const equipmentBoxMesh = bagMesh.equipmentBoxMeshes[equipmentIndex];
-        equipmentBoxMesh.add(grabbable.mesh);
-        grabbable.setState(zeroVector, zeroQuaternion, localVector.copy(oneVector).multiplyScalar(0.4));
-        grabbable.disablePhysics();
-        grabbable.setOwner(player.getId());
-
-        equipmentState.assets[equipmentIndex] = grabbable;
-        _saveEquipment();
-      }
-    };
-    hands.on('release', _release); */
 
     const position = new THREE.Vector3();
     const velocity = new THREE.Vector3();
@@ -980,62 +929,12 @@
           equipmentBoxMesh.material.polygonOffset = hovered;
         }
       };
-      const _updateAssetInstances = () => {
-        return; // XXX
-        const destinationPosition = localVector.copy(camera.position)
-          .add(localVector2.set(0, -1.6, 0));
-        const destinationMatrix = localMatrix.compose(
-          destinationPosition,
-          camera.quaternion,
-          oneVector
-        );
-        const destinationMatrixInverse = localMatrix.getInverse(destinationMatrix);
-
-        const assetInstances = items.getAssetInstances();
-        for (let i = 0; i < assetInstances.length; i++) {
-          const assetInstance = assetInstances[i];
-          if (!assetInstance.isGrabbed() && !assetInstance.open && !equipmentState.assets.includes(assetInstance)) {
-            const diffVector = localVector2.copy(assetInstance.position)
-              .applyMatrix4(destinationMatrixInverse)
-              .sub(zeroVector);
-            const diffScalar = Math.max(Math.abs(diffVector.x), Math.abs(diffVector.y), Math.abs(diffVector.z));
-            if (diffScalar < 0.4) {
-              let freeEquipmentIndex = -1;
-              for (let j = 0; j < bagMesh.equipmentBoxMeshes.length; j++) {
-                if (equipmentState.assets[j] === null) {
-                  freeEquipmentIndex = j;
-                  break;
-                }
-              }
-
-              if (freeEquipmentIndex !== -1) {
-                const grabbable = assetInstance;
-
-                const equipmentBoxMesh = bagMesh.equipmentBoxMeshes[freeEquipmentIndex];
-                equipmentBoxMesh.add(grabbable.mesh);
-                grabbable.setState(zeroVector, zeroQuaternion, localVector.copy(oneVector).multiplyScalar(0.4));
-                grabbable.disablePhysics();
-                grabbable.setOwner(player.getId());
-
-                equipmentState.assets[freeEquipmentIndex] = grabbable;
-                _saveEquipment();
-              }
-
-              const note = notification.addNotification(`Picked up ${assetInstance.name}.${assetInstance.ext}`);
-              setTimeout(() => {
-                notification.removeNotification(note);
-              }, 3000);
-            }
-          }
-        }
-      };
       _updateControls();
       _updateControllers();
       _updateInteractions();
       _updateObjects();
       _updateBagMesh();
       _updateEquipmentBoxMeshes();
-      _updateAssetInstances();
       _updateMp();
 
       const device = renderer.vr.getDevice();
