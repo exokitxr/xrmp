@@ -817,6 +817,28 @@ class XRMultiplayer extends EventEmitter {
     ws.onclose = err => {
       this.open = false;
 
+      const oldRemotePlayers = this.remotePlayers.slice();
+      this.remotePlayers.length = 0;
+      for (let i = 0; i < oldRemotePlayers.length; i++) {
+        const remotePlayer = oldRemotePlayers[i];
+        if (remotePlayer) {
+          const e = new XRMultiplayerEvent('playerleave');
+          e.player = remotePlayer;
+          this.emit(e.type, e);
+        }
+      }
+
+      const oldObjects = this.objects.slice();
+      this.objects.length = 0;
+      for (let i = 0; i < oldObjects.length; i++) {
+        const object = oldObjects[i];
+        if (object) {
+          const e = new XRMultiplayerEvent('objectremove');
+          e.object = object;
+          this.emit(e.type, e);
+        }
+      }
+
       const e = new XRMultiplayerEvent('close');
       this.emit(e.type, e);
     };
