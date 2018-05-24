@@ -1055,6 +1055,21 @@ class XRMultiplayer extends EventEmitter {
       throw new Error('object not removed');
     }
   }
+  setState(update) {
+    this.xrmp.ws.send(JSON.stringify({
+      type: 'setState',
+      state: update,
+    }));
+
+    for (const k in update) {
+      this.state[k] = update[k];
+    }
+
+    const e = new XRMultiplayerEvent('stateupdate');
+    e.state = this.state;
+    e.update = update;
+    this.emit(e.type, e);
+  }
   pushGeometry(positions, normals, indices) {
     const geometryBuffer = new ArrayBuffer(Uint32Array.BYTES_PER_ELEMENT + 3*Uint32Array.BYTES_PER_ELEMENT + positions.byteLength + normals.byteLength + indices.byteLength);
 
