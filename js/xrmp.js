@@ -1051,7 +1051,7 @@ class XRMultiplayer extends EventEmitter {
     }
   }
   setState(update) {
-    this.xrmp.ws.send(JSON.stringify({
+    this.ws.send(JSON.stringify({
       type: 'setState',
       state: update,
     }));
