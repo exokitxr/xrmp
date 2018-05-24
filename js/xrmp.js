@@ -1122,7 +1122,7 @@ class XRMultiplayer extends EventEmitter {
     _elementSetter(this, 'objectadd', onobjectadd);
   }
   get onobjectremove() {
-    return _elementGetter(this, 'onobjectremove');
+    return _elementGetter(this, 'objectremove');
   }
   set onobjectremove(onobjectremove) {
     _elementSetter(this, 'objectremove', onobjectremove);
