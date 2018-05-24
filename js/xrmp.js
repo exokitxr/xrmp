@@ -807,6 +807,7 @@ class XRMultiplayer extends EventEmitter {
     this.localPlayers = [];
     this.remotePlayers = [];
     this.objects = [];
+    this.state = {};
 
     const ws = new WebSocket(url + '?id=' + id);
     ws.binaryType = 'arraybuffer';
@@ -906,6 +907,19 @@ class XRMultiplayer extends EventEmitter {
             } else {
               console.warn('got event for unknown object', {id});
             }
+            break;
+          }
+          case 'setState': {
+            const {state: update} = j;
+
+            for (const k in update) {
+              this.state[k] = update[k];
+            }
+
+            const e = new XRMultiplayerEvent('stateupdate');
+            e.state = this.state;
+            e.update = update;
+            this.emit(e.type, e);
             break;
           }
           case 'sync': {
