@@ -266,6 +266,10 @@ class XRMultiplayerTHREE {
   }
   close() {
     this.xrmp.close();
+
+    for (let i = 0; i < this.localPlayerMeshes.length; i++) {
+      this.localPlayerMeshes[i].unsetMediaStream();
+    }
   }
   _bindPlayerMeshAudio(playerMesh) {
     const audioCtx = this.getAudioContext();
