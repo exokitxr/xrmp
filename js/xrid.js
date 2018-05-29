@@ -616,19 +616,35 @@ class XRID extends EventEmitter {
       return Promise.reject(new Error('invalid arguments: credentials required'));
     }
   }
-  get(k, format = 'arraybuffer') {
-    if (this.user) {
-      return fetch(this.url + '/u/' + this.user.username + '/' + k, {
+  get(k, opts = {}) {
+    if (typeof opts === 'string') {
+      opts = {
+        format: opts,
+      };
+    }
+    if (!opts.format) {
+      opts.format = 'arraybuffer';
+    }
+    if (!opts.user && this.user) {
+      opts.user = this.user.username;
+    }
+
+    if (opts.user) {
+      const o = {
         method: 'GET',
-        headers: {
-          'Authorization': `Token ${this.user.username} ${this.user.token}`,
-        },
-      })
+        mode: 'cors',
+      };
+      if (this.user) {
+        const headers = new Headers();
+        headers.append('Authorization', `Token ${this.user.username} ${this.user.token}`);
+        o.headers = headers;
+      }
+      return fetch(this.url + '/u/' + opts.user + '/' + k, o)
         .then(res => {
           if (res.status >= 200 && res.status < 300) {
-            if (format === 'json') {
+            if (opts.format === 'json') {
               return res.json();
-            } else if (format === 'text') {
+            } else if (opts.format === 'text') {
               return res.text();
             } else {
               return res.arrayBuffer();
@@ -656,6 +672,7 @@ class XRID extends EventEmitter {
           'Authorization': `Token ${this.user.username} ${this.user.token}`,
           'Content-Type': 'application/octet-stream',
         },
+        mode: 'cors',
       })
         .then(res => {
           if (res.status >= 200 && res.status < 300) {
@@ -680,6 +697,7 @@ class XRID extends EventEmitter {
         headers.append('Authorization', `Token ${this.user.username} ${this.user.token}`);
         return headers;
       })(),
+      mode: 'cors',
     })
       .then(res => {
         if (res.status >= 200 && res.status < 300) {
@@ -697,6 +715,7 @@ class XRID extends EventEmitter {
         headers.append('Authorization', `Token ${this.user.username} ${this.user.token}`);
         return headers;
       })(),
+      mode: 'cors',
     })
       .then(res => {
         if (res.status >= 200 && res.status < 300) {
@@ -714,12 +733,6 @@ class XRID extends EventEmitter {
   }
   removeAllEventListeners(name) {
     return this.removeAllListeners(name);
-  }
-  get onauthenticate() {
-    return _elementGetter(this, 'authenticate');
-  }
-  set onauthenticate(onauthenticate) {
-    _elementSetter(this, 'authenticate', onauthenticate);
   }
   get onerror() {
     return _elementGetter(this, 'error');
