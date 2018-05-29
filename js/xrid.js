@@ -562,68 +562,58 @@ class XRIDEvent {
 module.exports.XRIDEvent = XRIDEvent;
 
 class XRID extends EventEmitter {
-  constructor(url, {username, password, token} = {}) {
+  constructor(url) {
     super();
 
     this.url = url;
     this.user = null;
 
-    const _throwError = err => {
-      Promise.resolve()
-        .then(() => {
-          const e = new XRIDEvent('error');
-          e.error = err;
-          this.emit(e.type, e);
-        });
-    };
-
-    if (url) {
-      const opts = (() => {
-        if (username && password) {
-          return {
-            username,
-            password,
-          };
-        } else if (username && token) {
-          return {
-            username,
-            token,
-          };
-        } else {
-          return null;
-        }
-      })();
-
-      if (opts) {
-        fetch(url + '/l', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(opts),
-        })
-          .then(res => {
-            if (res.status >= 200 && res.status < 300) {
-              return res.json();
-            } else {
-              return Promise.reject(new Error(`got invalid status code ${res.status}`));
-            }
-          })
-          .then(user => {
-            this.user = user;
-
-            const e = new XRIDEvent('authenticate');
-            e.user = user;
-            this.emit(e.type, e);
-          })
-          .catch(err => {
-            _throwError(err);
-          });
+    if (!url) {
+      const e = new XRIDEvent('error');
+      e.error = new Error('invalid arguments: url required');
+      this.emit(e.type, e);
+    }
+  }
+  login({username, password, token} = {}) {
+    const opts = (() => {
+      if (username && password) {
+        return {
+          username,
+          password,
+        };
+      } else if (username && token) {
+        return {
+          username,
+          token,
+        };
       } else {
-        _throwError(new Error('invalid arguments: credentials required'));
+        return null;
       }
+    })();
+
+    if (opts) {
+      return fetch(this.url + '/l', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(opts),
+        mode: 'cors',
+      })
+        .then(res => {
+          if (res.status >= 200 && res.status < 300) {
+            return res.json();
+          } else {
+            return Promise.reject(new Error(`got invalid status code ${res.status}`));
+          }
+        })
+        .then(user => {
+          this.user = user;
+
+          return user;
+        });
     } else {
-      _throwError(new Error('invalid arguments: url required'));
+      return Promise.reject(new Error('invalid arguments: credentials required'));
     }
   }
   get(k, format = 'arraybuffer') {
