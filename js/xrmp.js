@@ -790,7 +790,7 @@ class XRObject extends EventEmitter {
     _elementSetter(this, 'update', onupdate);
   }
 }
-module.exports.XRRemotePlayer = XRRemotePlayer;
+module.exports.XRObject = XRObject;
 
 class XRMultiplayerEvent {
   constructor(type) {
