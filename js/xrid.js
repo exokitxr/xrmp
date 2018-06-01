@@ -695,6 +695,9 @@ class XRID extends EventEmitter {
       headers: (() => {
         const headers = new Headers();
         headers.append('Authorization', `Token ${this.user.username} ${this.user.token}`);
+        if (file.type) {
+          headers.append('Content-Type', file.type);
+        }
         return headers;
       })(),
       mode: 'cors',
