@@ -690,10 +690,6 @@ class XRID extends EventEmitter {
   }
   delete(k) {
     if (this.user) {
-      if (typeof v === 'object' && (v.constructor === Object || v.constructor === Array)) {
-        v = JSON.stringify(v);
-      }
-
       return fetch(this.url + '/u/' + this.user.username + '/' + k, {
         method: 'DELETE',
         headers: {
