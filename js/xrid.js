@@ -733,6 +733,24 @@ class XRID extends EventEmitter {
         }
       });
   }
+  remove(filename) {
+    return fetch(this.url + '/f/' + filename, {
+      method: 'DELETE',
+      headers: (() => {
+        const headers = new Headers();
+        headers.append('Authorization', `Token ${this.user.username} ${this.user.token}`);
+        return headers;
+      })(),
+      mode: 'cors',
+    })
+      .then(res => {
+        if (res.ok) {
+          return res.json();
+        } else {
+          return Promise.reject(new Error(`got invalid status code ${res.status}`));
+        }
+      });
+  }
   getFiles() {
     return fetch(this.url + '/f', {
       method: 'GET',
