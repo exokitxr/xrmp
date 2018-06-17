@@ -688,6 +688,33 @@ class XRID extends EventEmitter {
       return Promise.reject(new Error('not logged in'));
     }
   }
+  delete(k) {
+    if (this.user) {
+      if (typeof v === 'object' && (v.constructor === Object || v.constructor === Array)) {
+        v = JSON.stringify(v);
+      }
+
+      return fetch(this.url + '/u/' + this.user.username + '/' + k, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Token ${this.user.username} ${this.user.token}`,
+        },
+        mode: 'cors',
+      })
+        .then(res => {
+          if (res.ok) {
+            return res.json();
+          } else {
+            return res.text()
+              .then(text => {
+                 return Promise.reject(new Error(`got invalid status code ${res.status}: ${text}`));
+              });
+          }
+        });
+    } else {
+      return Promise.reject(new Error('not logged in'));
+    }
+  }
   upload(file) {
     return fetch(this.url + '/f/' + file.name, {
       method: 'PUT',
