@@ -1,6 +1,6 @@
 {
   "name": "xrmp",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "XRMultiplayer implementation",
   "main": "index.js",
   "scripts": {
