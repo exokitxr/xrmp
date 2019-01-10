@@ -4,7 +4,7 @@ const xrmpThree = ((
   })
 ) => {
 
-const AUDIO_BUFFER_SIZE = 2048;
+// const AUDIO_BUFFER_SIZE = 2048;
 
 const _makePlayerMesh = () => {
   const result = new THREE.Object3D();
@@ -29,8 +29,8 @@ class XRMultiplayerTHREE {
   constructor(xrmp) {
     this.xrmp = xrmp;
 
-    this.audioCtx = null;
-    this.audioListener = null;
+    /* this.audioCtx = null;
+    this.audioListener = null; */
 
     this.localPlayerMeshes = [];
     this.remotePlayerMeshes = [];
@@ -73,11 +73,11 @@ class XRMultiplayerTHREE {
       remotePlayerMesh.player = player;
       remotePlayerMesh.onupdate = null;
 
-      const positionalAudio = new THREE.PositionalAudio(this.getAudioListener());
+      /* const positionalAudio = new THREE.PositionalAudio(this.getAudioListener());
       remotePlayerMesh.hmd.add(positionalAudio);
       remotePlayerMesh.positionalAudio = positionalAudio;
 
-      remotePlayerMesh.audioBuffers = [];
+      remotePlayerMesh.audioBuffers = []; */
 
       player.onupdate = e => {
         const {matrix: playerMatrix} = e;
@@ -164,7 +164,7 @@ class XRMultiplayerTHREE {
     const localPlayer = this.xrmp.addPlayer(id, state);
     localPlayerMesh.player = localPlayer;
 
-    let mediaStream = null;
+    /* let mediaStream = null;
     let unsetMediaStream = null;
     localPlayerMesh.getMediaStream = () => mediaStream;
     localPlayerMesh.setMediaStream = newMediaStream => {
@@ -198,7 +198,7 @@ class XRMultiplayerTHREE {
         unsetMediaStream();
         unsetMediaStream = null;
       }
-    };
+    }; */
 
     this.localPlayerMeshes.push(localPlayerMesh);
 
@@ -227,7 +227,7 @@ class XRMultiplayerTHREE {
   getObjectMeshes() {
     return this.objectMeshes;
   }
-  getAudioContext() {
+  /* getAudioContext() {
     return THREE.AudioContext.getContext();
   }
   getAudioListener() {
@@ -235,7 +235,7 @@ class XRMultiplayerTHREE {
       this.audioListener = new THREE.AudioListener();
     }
     return this.audioListener;
-  }
+  } */
   pushUpdate() {
     for (let i = 0; i < this.localPlayerMeshes.length; i++) {
       const localPlayerMesh = this.localPlayerMeshes[i];
@@ -276,7 +276,7 @@ class XRMultiplayerTHREE {
       this.localPlayerMeshes[i].unsetMediaStream();
     }
   }
-  _bindPlayerMeshAudio(playerMesh) {
+  /* _bindPlayerMeshAudio(playerMesh) {
     const audioCtx = this.getAudioContext();
     const scriptProcessorNode = audioCtx.createScriptProcessor(AUDIO_BUFFER_SIZE, 1, 1);
     scriptProcessorNode.onaudioprocess = e => {
@@ -294,7 +294,7 @@ class XRMultiplayerTHREE {
     playerMesh.player.onaudio = e => {
       playerMesh.audioBuffers.push(e.buffer);
     };
-  }
+  } */
   _bindObjectMesh(objectMesh) {
     const {object} = objectMesh;
 
