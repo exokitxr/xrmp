@@ -547,7 +547,7 @@ const MESSAGE_TYPES = (() => {
   let id = 0;
   return {
     PLAYER_MATRIX: id++,
-    AUDIO: id++,
+    // AUDIO: id++,
     OBJECT_MATRIX: id++,
     GEOMETRY: id++,
   };
@@ -683,13 +683,13 @@ class XRLocalPlayer extends EventEmitter {
       state: update,
     }));
   }
-  pushAudio(float32Array) {
+  /* pushAudio(float32Array) {
     const audioMessage = new ArrayBuffer(Uint32Array.BYTES_PER_ELEMENT*2 + float32Array.byteLength);
     new Uint32Array(audioMessage, 0, 1)[0] = MESSAGE_TYPES.AUDIO;
     new Uint32Array(audioMessage, Uint32Array.BYTES_PER_ELEMENT, 1)[0] = this.id;
     new Float32Array(audioMessage, Uint32Array.BYTES_PER_ELEMENT*2, float32Array.length).set(float32Array);
     this.xrmp.ws.send(audioMessage);
-  }
+  } */
 }
 module.exports.XRLocalPlayer = XRLocalPlayer;
 
@@ -707,12 +707,12 @@ class XRRemotePlayer extends EventEmitter {
     e.matrix = playerMatrix;
     this.emit(e.type, e);
   }
-  pullAudioUpdate(float32Array) {
+  /* pullAudioUpdate(float32Array) {
     const e = new XRMultiplayerEvent('audio');
     e.player = this;
     e.buffer = float32Array;
     this.emit(e.type, e);
-  }
+  } */
   addEventListener(name, fn) {
     return this.on(name, fn);
   }
@@ -734,12 +734,12 @@ class XRRemotePlayer extends EventEmitter {
   set onstateupdate(onstateupdate) {
     _elementSetter(this, 'stateupdate', onstateupdate);
   }
-  get onaudio() {
+  /* get onaudio() {
     return _elementGetter(this, 'audio');
   }
   set onaudio(onaudio) {
     _elementSetter(this, 'audio', onaudio);
-  }
+  } */
 }
 module.exports.XRRemotePlayer = XRRemotePlayer;
 
@@ -1034,7 +1034,7 @@ class XRMultiplayer extends EventEmitter {
           } else {
             console.warn('got unknown player update message', {id});
           }
-        } else if (type === MESSAGE_TYPES.AUDIO) {
+        /* } else if (type === MESSAGE_TYPES.AUDIO) {
           const id = new Uint32Array(data, Uint32Array.BYTES_PER_ELEMENT, 1)[0];
           const player = this.remotePlayers.find(player => player.id === id);
 
@@ -1043,7 +1043,7 @@ class XRMultiplayer extends EventEmitter {
             player.pullAudioUpdate(float32Array);
           } else {
             console.warn('got unknown player update message', {id});
-          }
+          } */
         } else if (type === MESSAGE_TYPES.OBJECT_MATRIX) {
           const id = new Uint32Array(data, Uint32Array.BYTES_PER_ELEMENT, 1)[0];
           const object = this.objects.find(object => object.id === id);
