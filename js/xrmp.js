@@ -1211,6 +1211,14 @@ class XRMultiplayer extends EventEmitter {
     _elementSetter(this, 'sync', onsync);
   }
 }
+XRMultiplayer.requestServers = registryUrl => fetch(registryUrl)
+  .then(res => {
+    if (res.ok) {
+      return res.json();
+    } else {
+      return Promise.reject(new Error(`invalid status code ${res.status}`));
+    }
+  });
 module.exports.XRMultiplayer = XRMultiplayer;
 
 return module.exports;
