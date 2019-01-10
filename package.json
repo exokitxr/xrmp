@@ -18,7 +18,5 @@
     "url": "https://github.com/webmixedreality/xrmp/issues"
   },
   "homepage": "https://github.com/webmixedreality/xrmp#readme",
-  "devDependencies": {
-    "express": "^4.16.3"
-  }
+  "devDependencies": {}
 }
